@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Management System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f7f5f0;
+            --surface: #ffffff;
+            --surface2: #f0ede6;
+            --border: #e2ddd5;
+            --border2: #ccc8be;
+            --text: #1a1814;
+            --muted: #8a8578;
+            --accent: #2d5a3d;
+            --accent-light: #e8f0eb;
+            --accent2: #8b3a1a;
+            --accent2-light: #f5ebe6;
+            --accent3: #1a3a5c;
+            --accent3-light: #e6edf5;
+            --gold: #b8860b;
+            --gold-light: #faf3e0;
+            --danger: #c0392b;
+            --danger-light: #fdecea;
+            --success: #27ae60;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; }
+
+        .layout { display: flex; min-height: 100vh; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px; flex-shrink: 0; background: var(--text);
+            display: flex; flex-direction: column;
+            position: sticky; top: 0; height: 100vh; overflow-y: auto;
+        }
+        .logo { padding: 32px 28px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .logo-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; }
+        .logo-name { font-family: 'Lora', serif; font-size: 22px; color: #fff; font-style: italic; line-height: 1.2; }
+        .logo-tag { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+
+        .nav { padding: 20px 16px; flex: 1; }
+        .nav-section { margin-bottom: 24px; }
+        .nav-section-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.25); letter-spacing: 0.15em; text-transform: uppercase; padding: 0 12px; margin-bottom: 6px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+            border-radius: 8px; cursor: pointer; font-size: 13px; color: rgba(255,255,255,0.5);
+            transition: all 0.15s; margin-bottom: 2px; font-weight: 500;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); }
+        .nav-item.active { background: rgba(255,255,255,0.1); color: #fff; }
+        .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; opacity: 0.6; }
+        .nav-item.active .nav-dot { opacity: 1; background: #6fcf97; }
+
+        .sidebar-footer { padding: 20px 28px; border-top: 1px solid rgba(255,255,255,0.08); }
+        .api-status { display: flex; align-items: center; gap: 8px; }
+        .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #6fcf97; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        .status-text { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.4); }
+
+        /* MAIN */
+        .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+        .topbar {
+            background: var(--surface); border-bottom: 1px solid var(--border);
+            padding: 20px 36px; display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 10;
+        }
+        .page-title { font-family: 'Lora', serif; font-size: 28px; font-style: italic; color: var(--text); }
+        .page-sub { font-size: 12px; color: var(--muted); margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
+        .topbar-right { display: flex; gap: 10px; align-items: center; }
+
+        /* BUTTONS */
+        .btn {
+            padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;
+            cursor: pointer; border: none; transition: all 0.15s; font-family: 'Syne', sans-serif; letter-spacing: 0.02em;
+        }
+        .btn-primary { background: var(--text); color: #fff; }
+        .btn-primary:hover { background: #333; transform: translateY(-1px); }
+        .btn-outline { background: transparent; color: var(--text); border: 1.5px solid var(--border2); }
+        .btn-outline:hover { border-color: var(--text); }
+        .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+        .btn-danger:hover { background: var(--danger); color: white; }
+        .btn-success { background: var(--accent); color: white; }
+        .btn-success:hover { background: #245030; }
+        .btn-sm { padding: 5px 12px; font-size: 12px; border-radius: 6px; }
+        .btn-icon { width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 14px; }
+
+        /* CONTENT */
+        .content { padding: 32px 36px; flex: 1; overflow-y: auto; }
+        .page { display: none; animation: fadeIn 0.2s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+        /* STATS */
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px 22px; position: relative; overflow: hidden;
+        }
+        .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+        .stat-card.green::before { background: var(--accent); }
+        .stat-card.red::before { background: var(--accent2); }
+        .stat-card.blue::before { background: var(--accent3); }
+        .stat-card.gold::before { background: var(--gold); }
+        .stat-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+        .stat-num { font-family: 'Lora', serif; font-size: 40px; font-weight: 500; margin: 6px 0 4px; line-height: 1; }
+        .stat-card.green .stat-num { color: var(--accent); }
+        .stat-card.red .stat-num { color: var(--accent2); }
+        .stat-card.blue .stat-num { color: var(--accent3); }
+        .stat-card.gold .stat-num { color: var(--gold); }
+        .stat-sub { font-size: 12px; color: var(--muted); }
+
+        /* TABLE CARD */
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+        .card-header { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .card-title { font-size: 15px; font-weight: 600; }
+        .card-meta { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { padding: 11px 18px; text-align: left; font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid var(--border); font-weight: 500; background: var(--surface2); }
+        td { padding: 14px 18px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--surface2); }
+
+        /* BADGES */
+        .badge { display: inline-block; padding: 3px 9px; border-radius: 99px; font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+        .badge-green { background: var(--accent-light); color: var(--accent); border: 1px solid #c5dbc9; }
+        .badge-red { background: var(--accent2-light); color: var(--accent2); border: 1px solid #e8c9bc; }
+        .badge-blue { background: var(--accent3-light); color: var(--accent3); border: 1px solid #bccde0; }
+        .badge-gold { background: var(--gold-light); color: var(--gold); border: 1px solid #e8d89a; }
+        .badge-gray { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+        /* AVATAR */
+        .avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; font-family: 'Syne', sans-serif; }
+        .cell-name { display: flex; align-items: center; gap: 10px; }
+        .name-stack { display: flex; flex-direction: column; }
+        .name-main { font-weight: 600; font-size: 13px; }
+        .name-sub { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+        .mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
+        .actions-cell { display: flex; gap: 6px; }
+
+        /* EMPTY */
+        .empty-state { padding: 52px; text-align: center; }
+        .empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.25; }
+        .empty-title { font-size: 15px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+        .empty-sub { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+        /* MODAL */
+        .overlay { position: fixed; inset: 0; background: rgba(26,24,20,0.6); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(6px); }
+        .overlay.open { display: flex; }
+        .modal {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 16px; width: 500px; max-height: 88vh; overflow-y: auto;
+            padding: 32px; animation: modalIn 0.2s ease;
+        }
+        @keyframes modalIn { from{transform:scale(0.96) translateY(10px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+        .modal-header { margin-bottom: 24px; }
+        .modal-title { font-family: 'Lora', serif; font-size: 24px; font-style: italic; }
+        .modal-sub { font-size: 12px; color: var(--muted); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+        .form-group { margin-bottom: 16px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; font-family: 'JetBrains Mono', monospace; }
+        input, select, textarea {
+            width: 100%; background: var(--bg); border: 1.5px solid var(--border);
+            border-radius: 8px; padding: 10px 13px; color: var(--text); font-size: 13px;
+            font-family: 'Syne', sans-serif; outline: none; transition: border 0.15s;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--text); background: var(--surface); }
+        select option { background: var(--surface); }
+        .file-drop {
+            border: 2px dashed var(--border); border-radius: 10px; padding: 24px;
+            text-align: center; cursor: pointer; transition: all 0.15s;
+        }
+        .file-drop:hover { border-color: var(--accent); background: var(--accent-light); }
+        .file-drop-icon { font-size: 28px; margin-bottom: 8px; }
+        .file-drop-text { font-size: 13px; color: var(--muted); }
+        .file-drop-hint { font-size: 11px; color: var(--muted); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+        /* COURSE UPDATE INLINE */
+        .edit-row td { background: var(--gold-light) !important; }
+        .edit-input { padding: 5px 8px; font-size: 12px; border-radius: 5px; border: 1px solid var(--border2); background: white; font-family: 'Syne', sans-serif; width: 100%; }
+
+        /* TOAST */
+        .toast {
+            position: fixed; bottom: 28px; right: 28px; background: var(--text);
+            color: white; border-radius: 10px; padding: 13px 18px; font-size: 13px;
+            z-index: 999; display: none; gap: 10px; align-items: center; max-width: 320px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        .toast.show { display: flex; animation: toastIn 0.25s ease; }
+        @keyframes toastIn { from{transform:translateX(20px);opacity:0} to{transform:translateX(0);opacity:1} }
+        .toast-icon { font-size: 16px; flex-shrink: 0; }
+
+        /* LOADER */
+        .loader { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; }
+        @keyframes spin { to{transform:rotate(360deg)} }
+
+        /* DEPT GRID */
+        .dept-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .dept-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 22px; transition: all 0.15s; cursor: default;
+        }
+        .dept-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+        .dept-icon { font-size: 28px; margin-bottom: 12px; }
+        .dept-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+        .dept-desc { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
+        .dept-stats { display: flex; gap: 20px; padding-top: 14px; border-top: 1px solid var(--border); }
+        .dept-stat { font-size: 12px; color: var(--muted); }
+        .dept-stat span { display: block; font-family: 'Lora', serif; font-size: 22px; color: var(--text); line-height: 1.1; margin-bottom: 2px; }
+        .dept-actions { margin-top: 14px; }
+
+        /* IMAGE PREVIEW */
+        .img-preview { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); }
+    </style>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-eyebrow">Delhi University</div>
+            <div class="logo-name">College<br>Management</div>
+            <div class="logo-tag">v1.0 · Spring Boot</div>
+        </div>
+        <nav class="nav">
+            <div class="nav-section">
+                <div class="nav-section-label">Overview</div>
+                <div class="nav-item active" onclick="nav('dashboard',this)"><div class="nav-dot"></div>Dashboard</div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Manage</div>
+                <div class="nav-item" onclick="nav('students',this)"><div class="nav-dot"></div>Students</div>
+                <div class="nav-item" onclick="nav('teachers',this)"><div class="nav-dot"></div>Teachers</div>
+                <div class="nav-item" onclick="nav('departments',this)"><div class="nav-dot"></div>Departments</div>
+                <div class="nav-item" onclick="nav('courses',this)"><div class="nav-dot"></div>Courses</div>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="api-status">
+                <div class="status-dot" id="status-dot" style="background:#f39c12"></div>
+                <div class="status-text" id="status-text">localhost:8080</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- DASHBOARD -->
+        <div id="page-dashboard" class="page active">
+            <div class="topbar">
+                <div><div class="page-title">Dashboard</div><div class="page-sub">college.management / overview</div></div>
+                <div class="topbar-right"><button class="btn btn-outline btn-sm" onclick="loadAll()">↻ Refresh</button></div>
+            </div>
+            <div class="content">
+                <div class="stats-row">
+                    <div class="stat-card green"><div class="stat-label">Students</div><div class="stat-num" id="d-students">—</div><div class="stat-sub">enrolled</div></div>
+                    <div class="stat-card red"><div class="stat-label">Teachers</div><div class="stat-num" id="d-teachers">—</div><div class="stat-sub">faculty</div></div>
+                    <div class="stat-card blue"><div class="stat-label">Departments</div><div class="stat-num" id="d-depts">—</div><div class="stat-sub">active</div></div>
+                    <div class="stat-card gold"><div class="stat-label">Courses</div><div class="stat-num" id="d-courses">—</div><div class="stat-sub">available</div></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div><div class="card-title">Recent Students</div><div class="card-meta">GET /api/students</div></div></div>
+                    <table><thead><tr><th>Student</th><th>Email</th><th>Department</th></tr></thead><tbody id="dash-table"><tr><td colspan="3"><div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Loading...</div></div></td></tr></tbody></table>
+                </div>
+            </div>
+        </div>
+
+        <!-- STUDENTS -->
+        <div id="page-students" class="page">
+            <div class="topbar">
+                <div><div class="page-title">Students</div><div class="page-sub">college.management / students</div></div>
+                <div class="topbar-right">
+                    <button class="btn btn-outline btn-sm" onclick="loadStudents()">↻ Refresh</button>
+                    <button class="btn btn-primary" onclick="openModal('student')">+ Add Student</button>
+                </div>
+            </div>
+            <div class="content">
+                <div class="card">
+                    <div class="card-header"><div><div class="card-title">All Students</div><div class="card-meta" id="s-count">loading...</div></div></div>
+                    <table><thead><tr><th>Student</th><th>Contact</th><th>Department</th><th>Age</th><th>Actions</th></tr></thead>
+                        <tbody id="student-tbody"></tbody></table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TEACHERS -->
+        <div id="page-teachers" class="page">
+            <div class="topbar">
+                <div><div class="page-title">Teachers</div><div class="page-sub">college.management / teachers</div></div>
+                <div class="topbar-right">
+                    <button class="btn btn-outline btn-sm" onclick="loadTeachers()">↻ Refresh</button>
+                    <button class="btn btn-primary" onclick="openModal('teacher')">+ Add Teacher</button>
+                </div>
+            </div>
+            <div class="content">
+                <div class="card">
+                    <div class="card-header"><div><div class="card-title">All Teachers</div><div class="card-meta" id="t-count">loading...</div></div></div>
+                    <table><thead><tr><th>Teacher</th><th>Email</th><th>Subject</th><th>Department</th><th>Actions</th></tr></thead>
+                        <tbody id="teacher-tbody"></tbody></table>
+                </div>
+            </div>
+        </div>
+
+        <!-- DEPARTMENTS -->
+        <div id="page-departments" class="page">
+            <div class="topbar">
+                <div><div class="page-title">Departments</div><div class="page-sub">college.management / departments</div></div>
+                <div class="topbar-right">
+                    <button class="btn btn-outline btn-sm" onclick="loadDepts()">↻ Refresh</button>
+                    <button class="btn btn-primary" onclick="openModal('dept')">+ Add Department</button>
+                </div>
+            </div>
+            <div class="content"><div class="dept-grid" id="dept-grid"></div></div>
+        </div>
+
+        <!-- COURSES -->
+        <div id="page-courses" class="page">
+            <div class="topbar">
+                <div><div class="page-title">Courses</div><div class="page-sub">college.management / courses</div></div>
+                <div class="topbar-right">
+                    <button class="btn btn-outline btn-sm" onclick="loadCourses()">↻ Refresh</button>
+                    <button class="btn btn-primary" onclick="openModal('course')">+ Add Course</button>
+                </div>
+            </div>
+            <div class="content">
+                <div class="card">
+                    <div class="card-header"><div><div class="card-title">All Courses</div><div class="card-meta" id="c-count">loading...</div></div></div>
+                    <table><thead><tr><th>Course</th><th>Code</th><th>Credits</th><th>Actions</th></tr></thead>
+                        <tbody id="course-tbody"></tbody></table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- MODALS -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+
+    <!-- STUDENT -->
+    <div class="modal" id="modal-student">
+        <div class="modal-header">
+            <div class="modal-title">Add Student</div>
+            <div class="modal-sub">POST /api/student · multipart/form-data</div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Full Name</label><input id="s-name" type="text" placeholder="e.g. Arjun Sharma"></div>
+            <div class="form-group"><label>Age</label><input id="s-age" type="number" placeholder="20"></div>
+        </div>
+        <div class="form-group"><label>Email</label><input id="s-email" type="email" placeholder="arjun@du.ac.in"></div>
+        <div class="form-group"><label>Phone</label><input id="s-phone" type="text" placeholder="+91 98765 43210"></div>
+        <div class="form-group">
+            <label>Department</label>
+            <select id="s-dept"><option value="">— Select Department —</option></select>
+        </div>
+        <div class="form-group">
+            <label>Profile Photo</label>
+            <div class="file-drop" onclick="document.getElementById('s-img').click()">
+                <div class="file-drop-icon">📎</div>
+                <div class="file-drop-text" id="s-img-label">Click to choose photo</div>
+                <div class="file-drop-hint">→ @RequestPart MultipartFile imageFile</div>
+            </div>
+            <input type="file" id="s-img" accept="image/*" style="display:none" onchange="document.getElementById('s-img-label').textContent=this.files[0]?.name||'Click to choose photo'">
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeAllModals()">Cancel</button>
+            <button class="btn btn-primary" id="s-submit" onclick="submitStudent()">Add Student</button>
+        </div>
+    </div>
+
+    <!-- TEACHER -->
+    <div class="modal" id="modal-teacher" style="display:none">
+        <div class="modal-header">
+            <div class="modal-title">Add Teacher</div>
+            <div class="modal-sub">POST /api/teachers · application/json</div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Full Name</label><input id="t-name" type="text" placeholder="Dr. Priya Mehta"></div>
+            <div class="form-group"><label>Email</label><input id="t-email" type="email" placeholder="priya@du.ac.in"></div>
+        </div>
+        <div class="form-group"><label>Subject</label><input id="t-subject" type="text" placeholder="Data Structures & Algorithms"></div>
+        <div class="form-group">
+            <label>Department</label>
+            <select id="t-dept"><option value="">— Select Department —</option></select>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeAllModals()">Cancel</button>
+            <button class="btn btn-primary" id="t-submit" onclick="submitTeacher()">Add Teacher</button>
+        </div>
+    </div>
+
+    <!-- DEPARTMENT -->
+    <div class="modal" id="modal-dept" style="display:none">
+        <div class="modal-header">
+            <div class="modal-title">Add Department</div>
+            <div class="modal-sub">POST /api/departments · application/json</div>
+        </div>
+        <div class="form-group"><label>Department Name</label><input id="d-name" type="text" placeholder="e.g. Computer Science"></div>
+        <div class="form-group"><label>Description</label><textarea id="d-desc" rows="3" placeholder="Brief description..."></textarea></div>
+        <div class="form-group"><label>Icon (emoji)</label><input id="d-icon" type="text" placeholder="🖥️" maxlength="2" style="width:80px"></div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeAllModals()">Cancel</button>
+            <button class="btn btn-primary" id="d-submit" onclick="submitDept()">Add Department</button>
+        </div>
+    </div>
+
+    <!-- COURSE -->
+    <div class="modal" id="modal-course" style="display:none">
+        <div class="modal-header">
+            <div class="modal-title">Add Course</div>
+            <div class="modal-sub">POST /api/courses · application/json</div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Course Name</label><input id="c-name" type="text" placeholder="Data Structures"></div>
+            <div class="form-group"><label>Code</label><input id="c-code" type="text" placeholder="CS301"></div>
+        </div>
+        <div class="form-group"><label>Credits</label><input id="c-credits" type="number" placeholder="4" min="1" max="6"></div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeAllModals()">Cancel</button>
+            <button class="btn btn-primary" id="c-submit" onclick="submitCourse()">Add Course</button>
+        </div>
+    </div>
+
+    <!-- UPDATE COURSE -->
+    <div class="modal" id="modal-update-course" style="display:none">
+        <div class="modal-header">
+            <div class="modal-title">Update Course</div>
+            <div class="modal-sub">PUT /api/courses/{id} · application/json</div>
+        </div>
+        <input type="hidden" id="uc-id">
+        <div class="form-row">
+            <div class="form-group"><label>Course Name</label><input id="uc-name" type="text"></div>
+            <div class="form-group"><label>Code</label><input id="uc-code" type="text"></div>
+        </div>
+        <div class="form-group"><label>Credits</label><input id="uc-credits" type="number" min="1" max="6"></div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeAllModals()">Cancel</button>
+            <button class="btn btn-success" id="uc-submit" onclick="submitUpdateCourse()">Update Course</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span class="toast-icon" id="toast-icon">✓</span><span id="toast-msg">Done</span></div>
+
+<script>
+    const BASE = 'http://localhost:8080/api';
+    const avatarColors = [
+        ['#e8f0eb','#2d5a3d'],['#f5ebe6','#8b3a1a'],['#e6edf5','#1a3a5c'],
+        ['#faf3e0','#b8860b'],['#f0e8f5','#6b2d8b'],['#e8f5f0','#1a6b4a']
+    ];
+
+    let allDepts = [], allStudents = [], allTeachers = [], allCourses = [];
+
+    function nav(page, el) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('page-' + page).classList.add('active');
+        if (el) el.classList.add('active');
+        if (page === 'students') loadStudents();
+        if (page === 'teachers') loadTeachers();
+        if (page === 'departments') loadDepts();
+        if (page === 'courses') loadCourses();
+        if (page === 'dashboard') loadAll();
+    }
+
+    function toast(msg, ok = true) {
+        const t = document.getElementById('toast');
+        document.getElementById('toast-msg').textContent = msg;
+        document.getElementById('toast-icon').textContent = ok ? '✓' : '✕';
+        t.style.background = ok ? 'var(--text)' : 'var(--danger)';
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function setLoading(btnId, loading) {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.disabled = loading;
+        btn.innerHTML = loading ? '<span class="loader"></span>' : btn.dataset.label || btn.textContent;
+    }
+
+    function initials(name) {
+        return (name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    }
+    function avatarFor(i) { return avatarColors[i % avatarColors.length]; }
+
+    async function apiGet(path) {
+        const r = await fetch(BASE + path);
+        if (!r.ok) throw new Error(await r.text());
+        return r.json();
+    }
+
+    async function apiPost(path, body) {
+        const r = await fetch(BASE + path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        const text = await r.text();
+        if (!r.ok) throw new Error(text);
+        return text;
+    }
+
+    async function apiPut(path, body) {
+        const r = await fetch(BASE + path, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        const text = await r.text();
+        if (!r.ok) throw new Error(text);
+        return text;
+    }
+
+    async function apiDelete(path) {
+        const r = await fetch(BASE + path, { method:'DELETE' });
+        const text = await r.text();
+        if (!r.ok) throw new Error(text);
+        return text;
+    }
+
+    async function apiPostMultipart(path, formData) {
+        const r = await fetch(BASE + path, { method:'POST', body: formData });
+        const text = await r.text();
+        if (!r.ok) throw new Error(text);
+        return text;
+    }
+
+    // LOAD FUNCTIONS
+    async function loadAll() {
+        try {
+            const [s, t, d, c] = await Promise.all([
+                apiGet('/students').catch(() => []),
+                apiGet('/teachers').catch(() => []),
+                apiGet('/departments').catch(() => []),
+                apiGet('/courses').catch(() => [])
+            ]);
+            allStudents = s; allTeachers = t; allDepts = d; allCourses = c;
+            document.getElementById('d-students').textContent = s.length;
+            document.getElementById('d-teachers').textContent = t.length;
+            document.getElementById('d-depts').textContent = d.length;
+            document.getElementById('d-courses').textContent = c.length;
+            const tbody = document.getElementById('dash-table');
+            if (!s.length) {
+                tbody.innerHTML = emptyRow('👤', 'No students yet', 3);
+            } else {
+                tbody.innerHTML = s.slice(0,5).map((st,i) => {
+                    const [bg,fg] = avatarFor(i);
+                    return `<tr>
+          <td><div class="cell-name"><div class="avatar" style="background:${bg};color:${fg}">${initials(st.name)}</div><div class="name-stack"><div class="name-main">${st.name||'—'}</div></div></div></td>
+          <td class="mono">${st.email||'—'}</td>
+          <td>${st.department ? `<span class="badge badge-green">${st.department.name}</span>` : '<span class="badge badge-gray">—</span>'}</td>
+        </tr>`;
+                }).join('');
+            }
+            document.getElementById('status-dot').style.background = '#6fcf97';
+            document.getElementById('status-text').textContent = 'connected';
+        } catch(e) {
+            document.getElementById('status-dot').style.background = '#e74c3c';
+            document.getElementById('status-text').textContent = 'disconnected';
+        }
+    }
+
+    async function loadStudents() {
+        const tbody = document.getElementById('student-tbody');
+        tbody.innerHTML = `<tr><td colspan="5">${loadingRow()}</td></tr>`;
+        try {
+            allStudents = await apiGet('/students');
+            document.getElementById('s-count').textContent = allStudents.length + ' records';
+            if (!allStudents.length) { tbody.innerHTML = emptyRow('👤','No students yet — add one above',5); return; }
+            tbody.innerHTML = allStudents.map((s,i) => {
+                const [bg,fg] = avatarFor(i);
+                return `<tr>
+        <td><div class="cell-name">
+          ${s.imageName ? `<img src="${BASE}/student/${s.id}/image" class="img-preview" onerror="this.style.display='none'">` : `<div class="avatar" style="background:${bg};color:${fg}">${initials(s.name)}</div>`}
+          <div class="name-stack"><div class="name-main">${s.name||'—'}</div><div class="name-sub">#${s.id}</div></div>
+        </div></td>
+        <td><div>${s.email||'—'}</div><div class="mono">${s.phone||''}</div></td>
+        <td>${s.department ? `<span class="badge badge-green">${s.department.name}</span>` : '<span class="badge badge-gray">unassigned</span>'}</td>
+        <td class="mono">${s.age||'—'}</td>
+        <td><div class="actions-cell">
+          <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.id})">Delete</button>
+        </div></td>
+      </tr>`;
+            }).join('');
+        } catch(e) { tbody.innerHTML = emptyRow('⚠️','Failed to load — is Spring Boot running?',5); toast('Failed to load students', false); }
+    }
+
+    async function loadTeachers() {
+        const tbody = document.getElementById('teacher-tbody');
+        tbody.innerHTML = `<tr><td colspan="5">${loadingRow()}</td></tr>`;
+        try {
+            allTeachers = await apiGet('/teachers');
+            document.getElementById('t-count').textContent = allTeachers.length + ' records';
+            if (!allTeachers.length) { tbody.innerHTML = emptyRow('🎓','No teachers yet — add one above',5); return; }
+            tbody.innerHTML = allTeachers.map((t,i) => {
+                const [bg,fg] = avatarFor(i+2);
+                return `<tr>
+        <td><div class="cell-name"><div class="avatar" style="background:${bg};color:${fg}">${initials(t.name)}</div>
+          <div class="name-stack"><div class="name-main">${t.name||'—'}</div><div class="name-sub">#${t.id}</div></div>
+        </div></td>
+        <td class="mono">${t.email||'—'}</td>
+        <td><span class="badge badge-blue">${t.subject||'—'}</span></td>
+        <td>${t.department ? `<span class="badge badge-red">${t.department.name}</span>` : '<span class="badge badge-gray">—</span>'}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteTeacher(${t.id})">Delete</button></td>
+      </tr>`;
+            }).join('');
+        } catch(e) { tbody.innerHTML = emptyRow('⚠️','Failed to load',5); toast('Failed to load teachers', false); }
+    }
+
+    async function loadDepts() {
+        const grid = document.getElementById('dept-grid');
+        grid.innerHTML = `<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--muted)">${loadingRow()}</div>`;
+        try {
+            allDepts = await apiGet('/departments');
+            if (!allDepts.length) {
+                grid.innerHTML = `<div class="dept-card" style="opacity:0.5;grid-column:1/-1"><div class="empty-state"><div class="empty-icon">🏛️</div><div class="empty-title">No departments yet</div><div class="empty-sub">Add your first department above</div></div></div>`;
+                return;
+            }
+            const icons = ['🖥️','📐','⚗️','📊','🔬','📚','🎨','⚙️'];
+            grid.innerHTML = allDepts.map((d,i) => `
+      <div class="dept-card">
+        <div class="dept-icon">${d.icon || icons[i % icons.length]}</div>
+        <div class="dept-name">${d.name}</div>
+        <div class="dept-desc">${d.description || 'No description'}</div>
+        <div class="dept-stats">
+          <div class="dept-stat"><span>${allStudents.filter(s=>s.department?.id===d.id).length}</span>Students</div>
+          <div class="dept-stat"><span>${allTeachers.filter(t=>t.department?.id===d.id).length}</span>Teachers</div>
+        </div>
+        <div class="dept-actions">
+          <button class="btn btn-danger btn-sm" onclick="deleteDept(${d.id})">Delete</button>
+        </div>
+      </div>`).join('');
+        } catch(e) { grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Failed to load</div></div></div>`; }
+    }
+
+    async function loadCourses() {
+        const tbody = document.getElementById('course-tbody');
+        tbody.innerHTML = `<tr><td colspan="4">${loadingRow()}</td></tr>`;
+        try {
+            allCourses = await apiGet('/courses');
+            document.getElementById('c-count').textContent = allCourses.length + ' courses';
+            if (!allCourses.length) { tbody.innerHTML = emptyRow('📚','No courses yet — add one above',4); return; }
+            tbody.innerHTML = allCourses.map((c,i) => `
+      <tr id="course-row-${c.id}">
+        <td><div class="name-stack"><div class="name-main">${c.name}</div><div class="name-sub">#${c.id}</div></div></td>
+        <td><span class="badge badge-gold">${c.code||'—'}</span></td>
+        <td class="mono">${c.credits||'—'} cr</td>
+        <td><div class="actions-cell">
+          <button class="btn btn-outline btn-sm" onclick="openUpdateCourse(${c.id},'${c.name}','${c.code}',${c.credits})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCourse(${c.id})">Delete</button>
+        </div></td>
+      </tr>`).join('');
+        } catch(e) { tbody.innerHTML = emptyRow('⚠️','Failed to load',4); toast('Failed to load courses', false); }
+    }
+
+    // MODAL
+    function openModal(type) {
+        document.getElementById('overlay').classList.add('open');
+        ['student','teacher','dept','course','update-course'].forEach(t => {
+            document.getElementById('modal-'+t).style.display = t===type ? 'block':'none';
+        });
+        populateDeptSelects();
+    }
+    function closeModal(e) { if(e.target === document.getElementById('overlay')) closeAllModals(); }
+    function closeAllModals() { document.getElementById('overlay').classList.remove('open'); }
+
+    function populateDeptSelects() {
+        ['s-dept','t-dept'].forEach(id => {
+            const sel = document.getElementById(id);
+            if (!sel) return;
+            sel.innerHTML = '<option value="">— Select Department —</option>';
+            allDepts.forEach(d => sel.innerHTML += `<option value="${d.id}">${d.name}</option>`);
+        });
+    }
+
+    function openUpdateCourse(id, name, code, credits) {
+        document.getElementById('uc-id').value = id;
+        document.getElementById('uc-name').value = name;
+        document.getElementById('uc-code').value = code;
+        document.getElementById('uc-credits').value = credits;
+        openModal('update-course');
+    }
+
+    // SUBMIT FUNCTIONS
+    async function submitStudent() {
+        const name = document.getElementById('s-name').value.trim();
+        const email = document.getElementById('s-email').value.trim();
+        if (!name || !email) { toast('Name and email required', false); return; }
+        const file = document.getElementById('s-img').files[0];
+        if (!file) { toast('Profile photo required', false); return; }
+        const deptId = document.getElementById('s-dept').value;
+
+        const student = { name, email, age: +document.getElementById('s-age').value||0, phone: document.getElementById('s-phone').value };
+        if (deptId) student.department = { id: +deptId };
+
+        const fd = new FormData();
+        fd.append('student', new Blob([JSON.stringify(student)], {type:'application/json'}));
+        fd.append('imageFile', file);
+
+        setLoading('s-submit', true);
+        try {
+            await apiPostMultipart('/student', fd);
+            toast('Student added successfully');
+            closeAllModals();
+            loadStudents(); loadAll();
+        } catch(e) { toast('Error: ' + e.message, false); }
+        finally { setLoading('s-submit', false); document.getElementById('s-submit').textContent='Add Student'; }
+    }
+
+    async function submitTeacher() {
+        const name = document.getElementById('t-name').value.trim();
+        if (!name) { toast('Name required', false); return; }
+        const deptId = document.getElementById('t-dept').value;
+        const body = { name, email: document.getElementById('t-email').value, subject: document.getElementById('t-subject').value };
+        if (deptId) body.department = { id: +deptId };
+        setLoading('t-submit', true);
+        try {
+            await apiPost('/teachers', body);
+            toast('Teacher added');
+            closeAllModals();
+            loadTeachers(); loadAll();
+        } catch(e) { toast('Error: ' + e.message, false); }
+        finally { document.getElementById('t-submit').textContent='Add Teacher'; document.getElementById('t-submit').disabled=false; }
+    }
+
+    async function submitDept() {
+        const name = document.getElementById('d-name').value.trim();
+        if (!name) { toast('Name required', false); return; }
+        const body = { name, description: document.getElementById('d-desc').value, icon: document.getElementById('d-icon').value||'🏛️' };
+        setLoading('d-submit', true);
+        try {
+            await apiPost('/departments', body);
+            toast('Department added');
+            closeAllModals();
+            loadDepts(); loadAll();
+        } catch(e) { toast('Error: ' + e.message, false); }
+        finally { document.getElementById('d-submit').textContent='Add Department'; document.getElementById('d-submit').disabled=false; }
+    }
+
+    async function submitCourse() {
+        const name = document.getElementById('c-name').value.trim();
+        const code = document.getElementById('c-code').value.trim();
+        if (!name || !code) { toast('Name and code required', false); return; }
+        const body = { name, code, credits: +document.getElementById('c-credits').value||3 };
+        setLoading('c-submit', true);
+        try {
+            await apiPost('/courses', body);
+            toast('Course added');
+            closeAllModals();
+            loadCourses(); loadAll();
+        } catch(e) { toast('Error: ' + e.message, false); }
+        finally { document.getElementById('c-submit').textContent='Add Course'; document.getElementById('c-submit').disabled=false; }
+    }
+
+    async function submitUpdateCourse() {
+        const id = document.getElementById('uc-id').value;
+        const body = { name: document.getElementById('uc-name').value, code: document.getElementById('uc-code').value, credits: +document.getElementById('uc-credits').value };
+        setLoading('uc-submit', true);
+        try {
+            await apiPut('/courses/' + id, body);
+            toast('Course updated');
+            closeAllModals();
+            loadCourses();
+        } catch(e) { toast('Error: ' + e.message, false); }
+        finally { document.getElementById('uc-submit').textContent='Update Course'; document.getElementById('uc-submit').disabled=false; }
+    }
+
+    // DELETE
+    async function deleteStudent(id) {
+        if (!confirm('Delete this student?')) return;
+        try { await apiDelete('/student/' + id); toast('Student deleted'); loadStudents(); loadAll(); }
+        catch(e) { toast('Error: ' + e.message, false); }
+    }
+    async function deleteTeacher(id) {
+        if (!confirm('Delete this teacher?')) return;
+        try { await apiDelete('/teachers/' + id); toast('Teacher deleted'); loadTeachers(); loadAll(); }
+        catch(e) { toast('Error: ' + e.message, false); }
+    }
+    async function deleteDept(id) {
+        if (!confirm('Delete this department?')) return;
+        try { await apiDelete('/departments/' + id); toast('Department deleted'); loadDepts(); loadAll(); }
+        catch(e) { toast('Error: ' + e.message, false); }
+    }
+    async function deleteCourse(id) {
+        if (!confirm('Delete this course?')) return;
+        try { await apiDelete('/courses/' + id); toast('Course deleted'); loadCourses(); loadAll(); }
+        catch(e) { toast('Error: ' + e.message, false); }
+    }
+
+    // HELPERS
+    function emptyRow(icon, text, cols) {
+        return `<tr><td colspan="${cols}"><div class="empty-state"><div class="empty-icon">${icon}</div><div class="empty-title">${text}</div></div></td></tr>`;
+    }
+    function loadingRow() {
+        return `<div style="text-align:center;padding:40px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:12px">loading from API...</div>`;
+    }
+
+    // INIT
+    loadAll();
+</script>
+</body>
+</html>
